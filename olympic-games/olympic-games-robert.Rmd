@@ -15,7 +15,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Read in the participants.txt
+# Read in the Participants.txt
 
 # Understand the data
 -	Print the first 5 observations
