@@ -17,19 +17,97 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Read in the Participants Data.txt
 
+```{r}
+library(tidyverse)
+library(readr)
+df <- read_csv("participants.csv", 
+    col_types = cols(age = col_number(), 
+        athlete = col_character(), city = col_character(), 
+        discipline = col_character(), game = col_character(), 
+        height = col_integer(), sport = col_character(), 
+        weight = col_number()))
+```
 # Understand the data
 -	Print the first 5 observations
+```{r}
+head(df)
+```
 -	How many rows and columns does the data set have?
--	Display the variable types 
+```{r}
+df%>% 
+  nrow()
+```
 
+```{r}
+df%>% 
+  ncol()
+```
+
+-	Display the variable types
+```{r}
+summary(df)
+```
 # Counting participants
 -	Display the 10 countries with the highest number of participants.
+
+```{r}
+df%>%
+  arrange(athlete)%>%                 # Creates a list of all distinct athlete's names which is ordered alphabetically
+  count(country, sort = TRUE)%>%      # Counts the number of times, each country is present in this list of distinct athletes and sorts the outcome in descending order
+  head(10)                            # Displays the top 10 Values of this list
+```
 -	Calculate the number of participants from Germany, including West Germany and East Germany. 
 
+```{r}
+df%>%
+  filter(country %in% c("Germany","West Germany", "East Germany"))%>%
+  count()%>%
+  head()
+```
 # Body mass index
--	Add a column bmi that contains the athlete's body mass index. The body mass index is defined as weight / height^2 measured in kilogram / meter^2 
+-	Add a column bmi that contains the athlete's body mass index. The body mass index is defined as weight / height^2 measured in kilogram / meter^2
+```{r}
+df%>%
+  mutate(bmi = weight/((height/100)^2))%>%    # create a new column whereby changing the height variable from centimeters to meters.
+  filter(!is.na(bmi))%>%                      # filter the obvservations where we do not get calculated values due to missing weight and/or height data.
+  head()
+```
 -	Calculate the minimum, average, and maximum BMI
+```{r}
+dfb <- df%>%                                  # creates a new data frame with bmi as a permanent column
+  mutate(bmi = weight/((height/100)^2))%>%    # create a new column whereby changing the height variable from centimeters to meters.
+  filter(!is.na(bmi))                         # filter the obvservations where we do not get calculated values due to missing weight and/or height data.
+```
+
+```{r}
+  dfb%>%
+  summarise(mean = mean(bmi))%>%              # zeigt das arithmetische Mittel der Body Mass Indizes an. Es liegt im Bereich der "Normalgewichtigen"
+  head()
+```
+```{r}
+  dfb%>%
+  summarise(median = median(bmi))%>%              # zeigt den Median der Body Mass Indizes an, auch dieser liegt im normalen Bereich
+  head()
+```
+
+```{r}
+  dfb%>%
+  summarise(max = max(bmi))%>%                    # zeigt den maximalen Body Mass Index an. Dieser liegt im Bereich der Hyper Obese (Class VI)
+  head()
+```
+```{r}
+  dfb%>%
+  summarise(min = min(bmi))%>%                    # Das Minimum der BMI der Athleten zeigt, dass hier auch "very severly underweight" Sportler aktiv waren.
+  head()
+```
 -	How many participants of the sport Rhythmic Gymnastics are at least severely underweight? Use the BMI table below to answer this question.
+```{r}
+  dfb%>%
+  filter(sport=="Rhythmic Gymnastics")%>%         # filter "Rhythmic Gymnastics" from variable sport
+  filter(bmi <=16)%>%                             # filter those wiht a bmi, smaller or equal to 16
+  count()%>%                                      # count them
+  head()
+```
 -	What percentage of the participants of the sport Weightlifting are at least severely obese? Use the BMI table below to answer this question.
 
 |                                         | From (incl.) | To (excl.) |
@@ -46,16 +124,82 @@ knitr::opts_chunk$set(echo = TRUE)
 | Obese Class V   (Super obese)           | 50           | 60         |
 | Obese   Class VI (Hyper obese)          | 60           |            |
 
+```{r}
+nwlp <- dfb%>%                                    # nwlp is the number of weightlifting participants
+  filter(sport=="Weightlifting")%>%               # filter "Weightlifting" from variable sport
+  count()%>%
+  head()
+```
 
+```{r}
+nobwlp <- dfb%>%                                  # nwlp is the number of at least severely obese weightlifting participants
+  filter(sport=="Weightlifting")%>%               # filter "Weightlifting" from variable sport
+  filter(bmi >=35)%>%                             # filter those with a bmi, equal or larger than 35
+  count()%>%                                      # count them
+  head()
+```
+```{r}
+((nobwlp / nwlp)*100)%>%                          # divide the number of severely obese weightlifters by total number of weightlifters and mulitply by 100 to get %
+print()
+```
 # Joining data
 -	Read in athletes.xlsx and medallists.txt
+
+```{r}
+# During later steps, it became obvious, that the names in the variable "athlete" have been spelled or rather syntaxed differently in the different data frames that are to be joined. Some of the names (i.e. around 6 thousand of the athletes) have abbreviations mentioned like this:
+# A. Joshua "Josh" West           in athletes and participants files and
+# "A. Joshua ""Josh"" West"       in medallists file
+
+# In order to avoid distorted figures later, I tried to eliminate the quotation marks in all three files in order to get one tidy data frame. I tried this (among others) with the stringr command str_replace_all in order to exchange all quotation marks (matched patterns) in the string with Null values. Extra problems arose due to the fact that quotation marks are a special character in R that is used to surround string values...
+
+# df%>%str_replace_all("[\"]", "") this was my last try after about an hour of other approaches... it did not deliver the desired result. Hoping for a hint how to do this in R... for now I have replaced the "" with " in the medallist file with the help of a text editor and will continue with this cleaned file.
+```
+
+```{r}
+library(readr)
+medallists <- read_delim("cleanmedallists.txt", 
+    ";", escape_double = FALSE, trim_ws = TRUE,
+    col_types = cols(game = col_character(),
+  discipline = col_character(),
+  medal = col_character(),
+  athlete = col_character()))
+View(medallists)
+
+library(readxl)
+athletes <- read_excel("athletes.xlsx")
+View(athletes)
+```
 -	Join participants, athletes, and medalists into one large data frame. Make the join in such a way that we do not lose information contained in the participants data. 
 
+```{r}
+dff <- df%>%
+  full_join(athletes, by=c("athlete"))%>%                         # joining the dataframe with the gender information of the athletes tibble by their name
+  full_join(medallists, by=c("game", "discipline", "athlete"))    # joining the resulting dff with the medallists information by game, discipline and athlete, i.e. their names
+```
 # Medal table	
 -	Create the all-time Olympic Games medal table and display the first 10 entries. Medal tables are sorted from best to worst (sort first the number of golds, then silver, then bronze). The table should have the following columns. 
 
 | country | Gold | Silver | Bronze |
 |---------|------|--------|--------|
+
+```{r}
+dff%>%
+  group_by(country)%>%
+  summarise(Gold = mean(medal))%>%
+  head()
+
+
+```
+
+```{r}
+dff%>%
+  group_by(country)%>%
+  count(medal = "Gold")%>%
+  arrange(desc(n))%>%
+  head(10)
+
+```
+
 
 -	Create a similar medal table for athletes. Display the 10 most successful athletes in the Olympics history, and also display the athlete’s country. The table should have the following columns.
 
