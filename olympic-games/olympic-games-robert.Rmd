@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readr)
 df <- read_csv("participants.csv", 
-    col_types = cols(age = col_number(), 
+    col_types = cols(age = col_integer(), 
         athlete = col_character(), city = col_character(), 
         discipline = col_character(), game = col_character(), 
         height = col_integer(), sport = col_character(), 
@@ -30,7 +30,7 @@ df <- read_csv("participants.csv",
 # Understand the data
 -	Print the first 5 observations
 ```{r}
-head(df)
+head(df,5)
 ```
 -	How many rows and columns does the data set have?
 ```{r}
@@ -57,7 +57,6 @@ df%>%
   head(10)                            # Displays the top 10 Values of this list
 ```
 -	Calculate the number of participants from Germany, including West Germany and East Germany. 
-
 ```{r}
 df%>%
   filter(country %in% c("Germany","West Germany", "East Germany"))%>%
@@ -81,12 +80,11 @@ dfb <- df%>%                                  # creates a new data frame with bm
 
 ```{r}
   dfb%>%
-  summarise(mean = mean(bmi))%>%              # zeigt das arithmetische Mittel der Body Mass Indizes an. Es liegt im Bereich der "Normalgewichtigen"
-  head()
+  summarise(mean = mean(bmi))                 # zeigt das arithmetische Mittel der Body Mass Indizes an. Es liegt im Bereich der "Normalgewichtigen"
 ```
 ```{r}
   dfb%>%
-  summarise(median = median(bmi))%>%              # zeigt den Median der Body Mass Indizes an, auch dieser liegt im normalen Bereich
+  summarise(median = median(bmi))%>%          # zeigt den Median der Body Mass Indizes an, auch dieser liegt im normalen Bereich
   head()
 ```
 
@@ -138,21 +136,21 @@ nobwlp <- dfb%>%                                  # nwlp is the number of at lea
   count()%>%                                      # count them
   head()
 ```
+
 ```{r}
-((nobwlp / nwlp)*100)%>%                          # divide the number of severely obese weightlifters by total number of weightlifters and mulitply by 100 to get %
+((nobwlp / nwlp)*100)%>%                          # divide the number of severely obese weightlifters by total number of weightlifters and mulitply by 100 to get a percentage value
 print()
 ```
 # Joining data
 -	Read in athletes.xlsx and medallists.txt
-
 ```{r}
-# During later steps, it became obvious, that the names in the variable "athlete" have been spelled or rather syntaxed differently in the different data frames that are to be joined. Some of the names (i.e. around 6 thousand of the athletes) have abbreviations mentioned like this:
+# During later steps, it became obvious, that the names in the variable "athlete" have been spelled or rather syntaxed differently in the different data frames that are to be joined. Some of the names (i.e. around 6 thousand of the athletes) have names syntaxed like this:
 # A. Joshua "Josh" West           in athletes and participants files and
 # "A. Joshua ""Josh"" West"       in medallists file
 
-# In order to avoid distorted figures later, I tried to eliminate the quotation marks in all three files in order to get one tidy data frame. I tried this (among others) with the stringr command str_replace_all in order to exchange all quotation marks (matched patterns) in the string with Null values. Extra problems arose due to the fact that quotation marks are a special character in R that is used to surround string values...
+# In order to avoid distorted figures later, I tried to eliminate the quotation marks in all three files in order to get three tidy data frames. I tried this (among others) with the stringr command str_replace_all in order to exchange all quotation marks (matched patterns) in the string with Null values. Extra problems arose due to the fact that quotation marks are a special character in R that is used to surround string values...
 
-# df%>%str_replace_all("[\"]", "") this was my last try after about an hour of other approaches... it did not deliver the desired result. Hoping for a hint how to do this in R... for now I have replaced the "" with " in the medallist file with the help of a text editor and will continue with this cleaned file.
+# df%>%str_replace_all("[\"]", "") this was my last try after many of other approaches... it did not deliver the desired result. Hoping for a hint how to do this in R... for now I have replaced the "" with " in the medallist file with the help of a text editor and will continue with this cleaned file.
 ```
 
 ```{r}
@@ -169,12 +167,11 @@ library(readxl)
 athletes <- read_excel("athletes.xlsx")
 View(athletes)
 ```
--	Join participants, athletes, and medalists into one large data frame. Make the join in such a way that we do not lose information contained in the participants data. 
-
+-	Join participants, athletes, and medalists into one large data frame. Make the join in such a way that we do not lose information contained in the participants data.
 ```{r}
 dff <- df%>%
-  full_join(athletes, by=c("athlete"))%>%                         # joining the dataframe with the gender information of the athletes tibble by their name
-  full_join(medallists, by=c("game", "discipline", "athlete"))    # joining the resulting dff with the medallists information by game, discipline and athlete, i.e. their names
+  full_join(athletes, by=c("athlete"))%>%                         # joining the participants with the gender information of the athletes by their name
+  full_join(medallists, by=c("game", "discipline", "athlete"))    # joining the resulting table with the medallists information by game, discipline and athlete, i.e. their names
 ```
 # Medal table	
 -	Create the all-time Olympic Games medal table and display the first 10 entries. Medal tables are sorted from best to worst (sort first the number of golds, then silver, then bronze). The table should have the following columns. 
@@ -183,28 +180,76 @@ dff <- df%>%
 |---------|------|--------|--------|
 
 ```{r}
-dff%>%
-  group_by(country)%>%
-  summarise(Gold = mean(medal))%>%
-  head()
-
-
+gold <- dff%>%                                                          # Creating a tibble that stores the data for Gold medals by country
+  filter(medal == "Gold")%>%                                            # Filtering every oberservation (case) where there is "Gold" mentioned
+  count(country, medal = "Gold", wt = NULL, sort = TRUE, name ="Gold")  # Counting and sorting the result (which includes a grouping by "country")
+select(gold, -medal)                                                    # Dropping the redundant column "medal"
 ```
 
 ```{r}
-dff%>%
-  group_by(country)%>%
-  count(medal = "Gold")%>%
-  arrange(desc(n))%>%
-  head(10)
-
+silver <- dff%>%                                                        # Creating a tibble for silver medals just like the one for gold
+  filter(medal == "Silver")%>%
+  count(country, medal = "Silver", wt = NULL, sort = TRUE, name ="Silver")
+select(silver, -medal)
 ```
 
+```{r}
+bronze <- dff%>%                                                        # Creating a tibble for the bronze medals as well
+  filter(medal == "Bronze")%>%
+  count(country, medal = "Bronze", wt = NULL, sort = TRUE, name ="Bronze")
+select(bronze, -medal)
+```
 
+```{r}
+atomt <- gold%>%                                                        # Joining the three medal tables into atomt (i.e. all time olympic medal table)
+  full_join(silver, by=c("country"))%>%
+  full_join(bronze, by=c("country"))
+select(atomt, -medal, -medal.y, -medal.x)%>%                            # Removing three columns that have no reason to remain there
+  arrange(desc(Gold))%>%                                                # Arranging the data by the "Gold-Standard"
+  head(10)                                                              # Voilá (these ca. 5 lines of distinct code taken me about half an hour each)
+```
 -	Create a similar medal table for athletes. Display the 10 most successful athletes in the Olympics history, and also display the athlete’s country. The table should have the following columns.
 
 |athlete | country | Gold | Silver | Bronze |
 |--------|---------|------|--------|--------|
+
+```{r}
+gm <- dff%>%                                                          # Creating a tibble that stores the data for Gold medals by athlete
+  filter(medal == "Gold")%>%                                            # Filtering every oberservation (case) where there is "Gold" mentioned
+  count(athlete, medal = "Gold", wt = NULL, sort = TRUE, name ="Gold")  # Counting and sorting the result (which includes a grouping by "athlete")
+select(gm, -medal)                                                    # Dropping the redundant column "medal"
+```
+```{r}
+sm <- dff%>%                                                          # Creating a tibble that stores the data for Silver medals by athlete
+  filter(medal == "Silver")%>%                                            # Filtering every oberservation (case) where there is "Silver" mentioned
+  count(athlete, medal = "Silver", wt = NULL, sort = TRUE, name ="Silver")  # Counting and sorting the result (which includes a grouping by "athlete")
+select(sm, -medal)                                                    # Dropping the redundant column "medal"
+```
+```{r}
+bm <- dff%>%                                                          # Creating a tibble that stores the data for Bronze medals by athlete
+  filter(medal == "Bronze")%>%                                            # Filtering every oberservation (case) where there is "Bronze" mentioned
+  count(athlete, medal = "Bronze", wt = NULL, sort = TRUE, name ="Bronze")  # Counting and sorting the result (which includes a grouping by "athlete")
+select(bm, -medal)                                                    # Dropping the redundant column "medal"
+```
+```{r}
+ath_co <- dff%>%                      # Creating a tibble that stores country by athlete
+  filter(!is.na(medal))%>%            # filter only those obersvations, where there are inputs for medals     
+  select(country, athlete)%>%         # select only the columns country and athlete for the next operation
+  distinct(country, athlete)          # create a table that has the information of country and athlete's name for the medallists
+ath_co <- ath_co [ ,c(2,1)]           # reordering colums
+```
+
+
+```{r}
+aatomt <- ath_co%>%                         # creating a new table by fusing athletes' country
+  full_join(gm, by=c("athlete"))%>%         # with gold medals count
+  full_join(sm, by=c("athlete"))%>%
+  full_join(bm, by=c("athlete"))
+select(aatomt, -medal, -medal.x, -medal.y)%>% 
+  arrange(desc(Gold))%>%
+  head(10)                                  # Done
+```
+
 
 # Athlete’s age
 -	Display the youngest and the oldest participant together with information on the Olympic games and the sports and disciplines at which they participated.
