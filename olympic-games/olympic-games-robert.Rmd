@@ -243,18 +243,51 @@ ath_co <- ath_co [ ,c(2,1)]           # reordering colums
 ```{r}
 aatomt <- ath_co%>%                         # creating a new table by fusing athletes' country
   full_join(gm, by=c("athlete"))%>%         # with gold medals count
-  full_join(sm, by=c("athlete"))%>%
-  full_join(bm, by=c("athlete"))
-select(aatomt, -medal, -medal.x, -medal.y)%>% 
-  arrange(desc(Gold))%>%
+  full_join(sm, by=c("athlete"))%>%         # with silver medals count
+  full_join(bm, by=c("athlete"))            # with bronze medals count
+select(aatomt, -medal, -medal.x, -medal.y)%>% # dropping three columns that have no further use
+  arrange(desc(Gold))%>%                    # sort by the gold medal as standard
   head(10)                                  # Done
 ```
-
-
 # Athlete’s age
 -	Display the youngest and the oldest participant together with information on the Olympic games and the sports and disciplines at which they participated.
--	Calculate the minimum, average, and maximum age of medal winners per sport. Display the 5 sports with the highest and lowest average ages, respectively.
 
+```{r}
+oldst <- dff%>%
+  select(game, sport, discipline, athlete, age)%>%    # selecting only those columns from the base frame that are needed
+  filter(!is.na(age))%>%                              # filter out any NAs in the age column
+  filter(age == max(age))%>%                          # identify the oldest athlete
+  view()
+```
+
+```{r}
+yngst <- dff%>%                                       # same procedure for the youngest athlete
+  select(game, sport, discipline, athlete, age)%>%
+  filter(!is.na(age))%>%  
+  filter(age == min(age))%>%
+  view()
+```
+
+```{r}
+xtrage <- bind_rows(oldst, yngst)%>%                  # combine the two rows into one "target" view
+  view()
+```
+-	Calculate the minimum, average, and maximum age of medal winners per sport. Display the 5 sports with the highest and lowest average ages, respectively.
+```{r}
+t5sports <- dff%>%
+  select(game, sport, discipline, athlete, age, medal)%>%     # selecting these variables
+  filter(!is.na(age))%>%                                      # removing those observations where age is NA
+  filter(!is.na(medal))                                       # removing the non-medallists from the data frame
+```
+```{r}
+t5sports%>%
+  group_by(sport)%>%
+  summarise(age = max(age))%>%
+  head(5)
+```
+
+... this is the current state... I will initialize a pull request at this stage in order to get a feel for the review feature of git... and maybe a hint on this task. I am unsure how to split the analysis within the variable sports....
+  
 # Athlete’s sex
 -	Create a table that shows for each sport the proportions of men and women among the gold medal winners
 -	In the history of Olympic games, which sports have been exclusively reserved for men and women, respectively.
