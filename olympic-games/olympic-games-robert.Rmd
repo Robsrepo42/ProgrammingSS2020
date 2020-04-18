@@ -257,7 +257,10 @@ oldst <- dff%>%
   select(game, sport, discipline, athlete, age)%>%    # selecting only those columns from the base frame that are needed
   filter(!is.na(age))%>%                              # filter out any NAs in the age column
   filter(age == max(age))%>%                          # identify the oldest athlete
+<<<<<<< HEAD
   view()
+=======
+>>>>>>> c41cc11eaf20d2a7be3a5075dde9ce4c833e7c2a
 ```
 
 ```{r}
@@ -265,16 +268,24 @@ yngst <- dff%>%                                       # same procedure for the y
   select(game, sport, discipline, athlete, age)%>%
   filter(!is.na(age))%>%  
   filter(age == min(age))%>%
+<<<<<<< HEAD
   view()
+=======
+>>>>>>> c41cc11eaf20d2a7be3a5075dde9ce4c833e7c2a
 ```
 
 ```{r}
 xtrage <- bind_rows(oldst, yngst)%>%                  # combine the two rows into one "target" view
+<<<<<<< HEAD
   view()                                              # Voilá
+=======
+  view()
+>>>>>>> c41cc11eaf20d2a7be3a5075dde9ce4c833e7c2a
 ```
 -	Calculate the minimum, average, and maximum age of medal winners per sport. Display the 5 sports with the highest and lowest average ages, respectively.
 ```{r}
 t5sports <- dff%>%
+<<<<<<< HEAD
   select(game, sport, discipline, athlete, age, medal)%>%     # selecting these variables
   filter(!is.na(age))%>%                                      # removing those observations where age is NA
   filter(!is.na(medal))                                       # removing the non-medallists from the data frame
@@ -287,6 +298,16 @@ t5sports %>%
 ```
 
 ... this is the current state... I will initialize a pull request at this stage in order to get a feel for the review feature of git... and maybe a hint on this task. I am unsure how to split the analysis within the variable sports....
+=======
+  select(game, sport, discipline, athlete, age, medal)%>%
+  filter(!is.na(age))%>%
+  filter(!is.na(medal))%>%
+  count(sport)%>%
+  view()
+
+```
+
+>>>>>>> c41cc11eaf20d2a7be3a5075dde9ce4c833e7c2a
   
 # Athlete’s sex
 -	Create a table that shows for each sport the proportions of men and women among the gold medal winners
