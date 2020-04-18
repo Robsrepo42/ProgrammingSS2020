@@ -270,7 +270,7 @@ yngst <- dff%>%                                       # same procedure for the y
 
 ```{r}
 xtrage <- bind_rows(oldst, yngst)%>%                  # combine the two rows into one "target" view
-  view()
+  view()                                              # Voilá
 ```
 -	Calculate the minimum, average, and maximum age of medal winners per sport. Display the 5 sports with the highest and lowest average ages, respectively.
 ```{r}
@@ -280,10 +280,10 @@ t5sports <- dff%>%
   filter(!is.na(medal))                                       # removing the non-medallists from the data frame
 ```
 ```{r}
-t5sports%>%
-  group_by(sport)%>%
-  summarise(age = max(age))%>%
-  head(5)
+t5sports %>%
+  group_by(sport) %>% 
+  summarise(mean(age), max(age), min(age)) %>% 
+  arrange (desc(sport))
 ```
 
 ... this is the current state... I will initialize a pull request at this stage in order to get a feel for the review feature of git... and maybe a hint on this task. I am unsure how to split the analysis within the variable sports....
